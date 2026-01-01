@@ -5,44 +5,52 @@
 > **Academic-grade Open Science Data Search Engine**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Browser-orange)]()
-[![Status](https://img.shields.io/badge/Status-Stable-success)]()
-
-**DataRaven (数鸦)** 是一个专为科研人员设计的轻量级、无隐私追踪的科学数据搜索引擎。它复刻了 Google Scholar 的极简交互体验，旨在消除学术搜索中的“噪声”，帮助研究者快速定位**原始数据集 (Datasets)** 和**高质量数据论文 (Data Papers)**。
-
-DataRaven is a lightweight, privacy-first scientific data search engine designed for researchers. It replicates the minimalist experience of Google Scholar, aiming to eliminate noise in academic search and help researchers quickly locate **raw datasets** and **high-quality data papers**.
+[![Status](https://img.shields.io/badge/Live_Demo-Online-success)](https://[你的GitHub用户名].github.io/[你的仓库名]/)
+[![Tech](https://img.shields.io/badge/Built_with-Vanilla_JS_%2B_Tailwind-38bdf8)]()
 
 ---
 
-## ✨ 核心特性 (Features)
+## 🔗 在线访问 (Live Demo)
 
-* **🎯 纯净模式 (Purity Protocol)**: 勾选“数据期刊”时启用严格白名单，优先展示 *Scientific Data*, *ESSD*, *Big Data Research* 等顶级期刊内容，自动过滤普通文献。
-* **⚡️ 多源聚合 (Hybrid Search)**: 实时聚合 **OpenAlex** (学术文献) 与 **DataCite** (数据仓储) 双重 API 接口。
-* **🎓 极致交互 (Scholar UI)**: 1:1 复刻谷歌学术体验，支持按**年份**、**引用数**排序，提供 **GB/T 7714**、**APA**、**MLA** 一键引用。
-* **🔗 中文优化**: 内置 FinData、ScienceDB、国家数据局的直通车跳转。
-* **🔒 安全轻量**: **单文件架构 (Single HTML)**，无后端服务器，无 Cookie 追踪，即开即用。
+👉 **[点击这里开始搜索 / Click here to start searching](https://[Rimagination].github.io/[dataraven]/)**
 
 ---
 
-## 🚀 快速开始 (Quick Start)
+## 📖 项目简介 (Introduction)
 
-无需安装 Node.js，无需 Python，甚至无需服务器。
+**DataRaven (数鸦)** 是一个专为科研人员设计的轻量级、无隐私追踪的科学数据搜索引擎。
 
-### 方法 1: 直接运行 (Run Locally)
-1. 下载本项目中的 `index.html` 文件。
-2. 双击在浏览器（Chrome, Edge, Safari 等）中打开。
-3. 开始搜索！
+针对目前学术搜索中“普通文献淹没原始数据”的痛点，DataRaven 采用**严格白名单机制**与**多源聚合算法**，优先展示 *Scientific Data*, *ESSD*, *Figshare*, *Zenodo* 等顶级数据资源，剔除噪声，复刻 Google Scholar 的极简交互体验。
 
-### 方法 2: 部署 (Deploy)
-由于本项目是纯静态页面，您可以直接在 GitHub 仓库的 `Settings -> Pages` 中开启 **GitHub Pages**，获得永久免费的访问链接。
+DataRaven is a lightweight, privacy-first search engine designed specifically for scientific data discovery. It filters out noise by prioritizing top-tier data journals and repositories, offering a clean, Scholar-like experience.
+
+---
+
+## ✨ 核心特性 (Key Features)
+
+### 🎯 纯净模式 (Purity Protocol)
+- **智能过滤**: 勾选“数据期刊”时启用严格算法，只保留 *Scientific Data*, *ESSD*, *Big Data Research* 等 12+ 本顶级数据期刊内容。
+- **去噪**: 自动过滤发在普通期刊上的非数据类文章。
+
+### ⚡️ 多源聚合 (Hybrid Search)
+- **OpenAlex API**: 覆盖全球 2.5 亿篇学术文献元数据。
+- **DataCite API**: 直连 Figshare, Zenodo, Dryad, PANGAEA, ScienceDB 等主流数据仓储。
+
+### 🎓 学术级交互 (Scholar UI)
+- **完美复刻**: 包含按年份筛选、按引用数排序、按相关性排序。
+- **引用工具**: 一键生成 **GB/T 7714**, **APA**, **MLA** 格式引用，支持 BibTeX 导出。
+- **中文优化**: 内置 FinData、ScienceDB、国家数据局的直通车跳转。
 
 ---
 
 ## 🛠 技术栈 (Tech Stack)
 
+本项目采用 **无后端 (Serverless)** 纯前端架构：
+
 * **Core**: HTML5, Vanilla JavaScript (ES6+)
 * **Styling**: Tailwind CSS (CDN)
-* **Data Sources**: [OpenAlex API](https://openalex.org/), [DataCite API](https://datacite.org/), [CrossRef API](https://www.crossref.org/)
+* **APIs**: OpenAlex, DataCite, CrossRef
+* **Deployment**: GitHub Pages
 
 ---
 
