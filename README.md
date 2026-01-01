@@ -12,7 +12,7 @@
 
 ## 🔗 在线访问 (Live Demo)
 
-👉 **[点击这里开始搜索 / Click here to start searching](https://[Rimagination].github.io/[dataraven]/)**
+👉 **[点击这里开始搜索 / Click here to start searching](https://rimagination.github.io/dataraven/)**
 
 ---
 
