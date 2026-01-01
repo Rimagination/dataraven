@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataRaven | 学术级开源数据检索引擎</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=Roboto+Slab:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Arial', 'sans-serif'],
+                        serif: ['"Roboto Slab"', 'serif'] 
+                    },
+                    colors: {
+                        primary: '#202124',
+                        link: '#1a0dab',    
+                        meta: '#006621',
+                        sidebar: '#5f6368', 
+                        active: '#202124',  
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #ffffff; color: #202124; font-size: 14px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .glass-panel { background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid #dfe1e5; }
+        
+        .view-section { display: none; flex-direction: column; height: 100%; }
+        .view-section.active { display: flex; }
+
+        /* Sidebar Styles */
+        .sidebar-group { margin-bottom: 20px; }
+        .sidebar-link { display: block; color: #1a0dab; padding: 4px 0; cursor: pointer; text-decoration: none; }
+        .sidebar-link:hover { text-decoration: underline; }
+        .sidebar-link.active { color: #202124; font-weight: 700; text-decoration: none; cursor: default; }
+        .sidebar-title { font-size: 13px; color: #5f6368; margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
+        
+        .type-label { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; color: #3c4043; }
+        .type-label:hover { color: #1a0dab; }
+
+        .ext-link { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; margin-bottom: 4px; border-radius: 4px; color: #3c4043; background: #f8f9fa; font-size: 13px; text-decoration: none; transition: background 0.2s; }
+        .ext-link:hover { background: #e8f0fe; color: #1a0dab; }
+
+        /* Citation Modal */
+        .cite-row { margin-bottom: 16px; }
+        .cite-format { color: #5f6368; font-size: 13px; margin-bottom: 4px; }
+        .cite-content { font-family: Arial, sans-serif; font-size: 14px; color: #202124; user-select: text; cursor: pointer; padding: 8px; background: #f8f9fa; border-radius: 4px; }
+        .cite-content:hover { background: #e8f0fe; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden antialiased">
+
+    <nav class="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 transition-all duration-300 pointer-events-none" id="topNav">
+        <div class="opacity-0 transition-opacity duration-300 cursor-pointer flex items-end gap-2 pointer-events-auto" id="navLogo" onclick="resetHome()">
+            <div class="w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-md mb-0.5"><i class="fa-solid fa-crow"></i></div>
+            <div class="flex items-baseline">
+                <span class="font-bold text-xl tracking-tight text-slate-900 font-serif">DataRaven</span>
+                <span class="text-xs font-normal text-slate-500 ml-1.5 transform translate-y-[-2px]">数鸦</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 pointer-events-auto">
+            <button onclick="toggleModal('about')" class="text-sm text-sidebar hover:text-primary transition">关于本站</button>
+        </div>
+    </nav>
+
+    <div id="heroSection" class="view-section active flex-col items-center justify-center w-full h-full px-4 animate-slide-up">
+        <div class="mb-8 flex flex-col items-center">
+            <div class="w-24 h-24 bg-primary text-white rounded-2xl flex items-center justify-center text-5xl shadow-2xl mb-5">
+                <i class="fa-solid fa-crow"></i>
+            </div>
+            <div class="flex items-end gap-3 mb-2">
+                <h1 class="text-5xl font-bold text-slate-900 tracking-tight font-serif">DataRaven</h1>
+                <span class="text-2xl font-light text-slate-400 pb-1">数鸦</span>
+            </div>
+            <p class="text-sidebar mt-1 font-medium text-lg tracking-wide">学术级开源数据检索引擎</p>
+        </div>
+
+        <div class="w-full max-w-2xl relative group">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-slate-400 group-hover:text-primary transition"></i>
+            </div>
+            <input type="text" id="heroInput" 
+                class="block w-full pl-12 pr-12 py-4 bg-white border border-slate-200 rounded-full text-lg shadow-sm hover:shadow-md focus:shadow-lg focus:outline-none focus:border-primary transition-all duration-300"
+                placeholder="搜索关键词 (支持 DOI, 中英文主题, 例如: 碳中和, GDP)..." 
+                onkeypress="handleHeroEnter(event)">
+            <button onclick="triggerSearchFromHero()" class="absolute right-3 top-2.5 bg-slate-100 hover:bg-primary hover:text-white text-slate-600 p-2 rounded-full transition-all">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+        
+        <div class="mt-12 text-center w-full flex justify-center">
+            <div id="heroTrendTags" class="flex flex-wrap justify-center gap-2 max-w-3xl"></div>
+        </div>
+    </div>
+
+    <div id="resultsLayout" class="view-section pt-16">
+        <div class="glass-panel absolute top-0 left-0 w-full h-16 z-40 flex items-center px-4 lg:px-6">
+            <div class="w-48 hidden lg:block"></div> 
+            <div class="flex-1 max-w-3xl mx-auto relative ml-4 md:ml-0">
+                <input type="text" id="headerInput" class="w-full bg-slate-100 border border-transparent hover:bg-white hover:border-slate-300 rounded-full pl-6 pr-12 py-2.5 text-base focus:outline-none focus:bg-white focus:border-primary shadow-sm transition" placeholder="继续搜索..." onkeypress="handleHeaderEnter(event)">
+                <button onclick="triggerSearchFromHeader()" class="absolute right-2 top-1.5 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700"><i class="fa-solid fa-magnifying-glass text-xs"></i></button>
+            </div>
+            <div class="w-48 hidden lg:block"></div>
+        </div>
+
+        <div class="flex flex-1 overflow-hidden max-w-screen-xl mx-auto w-full px-4 lg:px-0">
+            <aside class="w-48 hidden md:block pt-6 pr-4 overflow-y-auto">
+                <div class="sidebar-group">
+                    <div class="sidebar-link active" id="filter-time-all" onclick="setFilter('time', 'all')">时间不限</div>
+                    <div class="sidebar-link" id="filter-time-2026" onclick="setFilter('time', '2026')">2026以来</div>
+                    <div class="sidebar-link" id="filter-time-2025" onclick="setFilter('time', '2025')">2025以来</div>
+                    <div class="sidebar-link" id="filter-time-2022" onclick="setFilter('time', '2022')">2022以来</div>
+                </div>
+
+                <div class="sidebar-group">
+                    <div class="sidebar-title">排序方式</div>
+                    <div class="sidebar-link active" id="filter-sort-relevance" onclick="setFilter('sort', 'relevance')">按相关性排序</div>
+                    <div class="sidebar-link" id="filter-sort-date" onclick="setFilter('sort', 'date')">按日期排序</div>
+                    <div class="sidebar-link" id="filter-sort-cited" onclick="setFilter('sort', 'cited')">按引用数排序</div>
+                </div>
+
+                <div class="sidebar-group">
+                    <div class="sidebar-link active" id="filter-lang-all" onclick="setFilter('lang', 'all')">不限语言</div>
+                    <div class="sidebar-link" id="filter-lang-cn" onclick="setFilter('lang', 'cn')">简体中文网页</div>
+                </div>
+
+                <div class="sidebar-group pt-4 border-t border-slate-200">
+                    <div class="sidebar-title">包含类型</div>
+                    <label class="type-label"><input type="checkbox" id="chkRepo" checked onchange="runSearch()" class="accent-blue-600"><span>原始数据文件</span></label>
+                    <label class="type-label"><input type="checkbox" id="chkDataPaper" checked onchange="runSearch()" class="accent-blue-600"><span>数据期刊</span></label>
+                    <label class="type-label"><input type="checkbox" id="chkJournal" onchange="runSearch()" class="accent-blue-600"><span>综合学术期刊</span></label>
+                </div>
+
+                <div class="sidebar-group pt-4 border-t border-slate-200">
+                    <div class="sidebar-title">中文数据直通车</div>
+                    <a href="#" onclick="jumpTo('findata')" class="ext-link">
+                        <span>Findata</span> <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                    <a href="#" onclick="jumpTo('scidb')" class="ext-link">
+                        <span>ScienceDB</span> <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                    <a href="#" onclick="jumpTo('data88')" class="ext-link">
+                        <span>国家数据局</span> <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                </div>
+            </aside>
+
+            <main class="flex-1 bg-white relative flex flex-col min-w-0 pt-4 pl-0 md:pl-4">
+                <div class="pb-2 border-b border-transparent flex justify-between items-center">
+                    <span id="statusText" class="text-xs text-sidebar">DataRaven 准备就绪</span>
+                </div>
+                
+                <div id="resultsArea" class="flex-1 overflow-y-auto pr-2 space-y-6 scroll-smooth pb-20"></div>
+                
+                <div id="loadMoreContainer" class="hidden py-8 text-center">
+                    <button onclick="loadNextPage()" id="btnLoadMore" class="text-blue-700 hover:underline text-sm font-medium"><i class="fa-solid fa-chevron-down"></i> 显示更多结果</button>
+                    <p id="loadingMoreText" class="hidden text-slate-400 text-sm"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> 加载中...</p>
+                    <p id="endOfResultsText" class="hidden text-slate-400 text-xs">-- 已加载全部相关结果 --</p>
+                </div>
+            </main>
+
+            <aside class="w-64 hidden xl:block pl-8 pt-6">
+                <div class="border-l border-slate-200 pl-4 h-full">
+                    <div class="font-bold text-xs text-sidebar mb-4 flex items-center gap-2 uppercase tracking-wide">
+                        <i class="fa-solid fa-bolt text-yellow-500"></i> 最新数据发表
+                    </div>
+                    <div id="trendingArea" class="space-y-4"></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <div id="citationLayout" class="view-section pt-16 bg-white hidden">
+        <div class="glass-panel absolute top-0 left-0 w-full h-16 z-[60] flex items-center px-4 lg:px-6 shadow-sm">
+            <div class="w-full max-w-screen-xl mx-auto flex items-center gap-4">
+                <button onclick="closeCitationView()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition group">
+                    <i class="fa-solid fa-arrow-left text-slate-600 group-hover:text-primary"></i>
+                </button>
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs text-slate-500 mb-0.5">被引用文献：</div>
+                    <div id="citedWorkTitle" class="text-sm font-bold text-slate-800 truncate font-serif">...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-1 overflow-hidden max-w-screen-xl mx-auto w-full px-4 lg:px-0">
+            <main class="flex-1 bg-white relative flex flex-col min-w-0 pt-4">
+                <div id="citationStatus" class="pb-2 border-b border-transparent text-xs text-sidebar">正在加载引用列表...</div>
+                <div id="citationResultsArea" class="flex-1 overflow-y-auto pr-2 space-y-6 scroll-smooth pb-20"></div>
+            </main>
+        </div>
+    </div>
+
+    <div id="modal-cite" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4" onclick="closeCiteModal()">
+        <div class="bg-white w-full max-w-2xl rounded shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-slate-800">引用</h3>
+                <button onclick="closeCiteModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6" id="citeContentArea"></div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-4 text-xs font-medium text-blue-700"><button class="hover:underline">BibTeX</button></div>
+        </div>
+    </div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded shadow-lg text-sm hidden transition-opacity z-[90]">已复制</div>
+    <div id="modal-about" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-[60] hidden transition-opacity opacity-0 flex items-center justify-center p-4" onclick="toggleModal('about')">
+        <div class="bg-white rounded border border-gray-200 shadow-2xl w-full max-w-md scale-95 transition-transform" onclick="event.stopPropagation()">
+            <div class="p-8 text-center">
+                <div class="w-12 h-12 bg-primary text-white rounded flex items-center justify-center mx-auto mb-4 text-xl shadow-lg"><i class="fa-solid fa-crow"></i></div>
+                <h2 class="text-xl font-bold mb-1 font-serif">DataRaven <span class="text-lg font-normal text-slate-500">数鸦</span></h2>
+                <div class="text-left bg-gray-50 p-5 border border-gray-100 text-sm text-gray-600 space-y-3 mb-6 rounded">
+                    <p><strong>学术级搜索：</strong> 专为科研人员设计，剔除噪声，直达数据源头。</p>
+                    <div class="border-t border-gray-200 pt-3 mt-3"><p class="font-bold text-gray-800 mb-1">Developer</p><p>Liang Ren</p><p class="text-blue-600 font-mono text-xs">rl23@mails.tsinghua.edu.cn</p></div>
+                </div>
+                <button onclick="toggleModal('about')" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium transition">确定</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- State ---
+    let STATE = { page: 1, query: "", total: 0, loaded: 0, filters: { time: 'all', sort: 'relevance', lang: 'all' }, currentItems: [] };
+
+    // --- Config ---
+    const TIER_1_JOURNALS = [
+        "Scientific Data", "Earth System Science Data", "China Scientific Data", "中国科学数据", 
+        "Global Change Data", "Big Earth Data", "GigaScience", "Big Data Research", "Journal of Big Data", 
+        "International Journal of Digital Earth", "Data in Brief", "Biodiversity Data Journal", "Geoscience Data Journal"
+    ];
+    const REPO_PREFIXES = ["10.6084", "10.5281", "10.5061", "10.1594", "10.11888"]; 
+
+    window.onload = function() { loadTrending(); generateRealTimeKeywords(); };
+
+    // --- Helpers ---
+    function $(id) { return document.getElementById(id); }
+    function jumpTo(platform) {
+        const q = STATE.query || ""; let url = "";
+        if (platform === 'findata') url = q ? `https://www.findata.cn/search?q=${encodeURIComponent(q)}` : "https://www.findata.cn/";
+        else if (platform === 'scidb') url = q ? `https://www.scidb.cn/search?w=${encodeURIComponent(q)}` : "https://www.scidb.cn/";
+        else if (platform === 'data88') url = "https://data.stats.gov.cn/";
+        window.open(url, '_blank');
+    }
+    function openCiteModal(index) {
+        const item = STATE.currentItems[index]; if (!item) return;
+        const gbt = `[1] ${item.author||'Anon'}. ${item.title}. ${item.source||'Unknown'}, ${item.year}. DOI:${item.doi}`;
+        const apa = `${item.author||'Anon'}. (${item.year}). ${item.title}. ${item.source||'Unknown'}. https://doi.org/${item.doi}`;
+        $('citeContentArea').innerHTML = `<div class="cite-row" onclick="copyText('${gbt.replace(/'/g, "\\'")}')"><div class="cite-format">GB/T 7714</div><div class="cite-content">${gbt}</div></div><div class="cite-row" onclick="copyText('${apa.replace(/'/g, "\\'")}')"><div class="cite-format">APA</div><div class="cite-content">${apa}</div></div>`;
+        $('modal-cite').classList.remove('hidden');
+    }
+    function closeCiteModal() { $('modal-cite').classList.add('hidden'); }
+    function copyText(t) { navigator.clipboard.writeText(t).then(() => { const toast=$('toast'); toast.classList.remove('hidden'); setTimeout(()=>toast.classList.add('hidden'),2000); closeCiteModal(); }); }
+
+    // --- View Logic (Fixed for Overlap) ---
+    function showView(viewId) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        if(viewId === 'resultsLayout') $(viewId).classList.add('active'); 
+        else if(viewId === 'citationLayout') { $(viewId).classList.remove('hidden'); $(viewId).classList.add('active'); }
+        else $(viewId).classList.add('active'); // Hero
+        
+        // Logo Visibility Control
+        const logo = $('navLogo');
+        if (viewId === 'resultsLayout') {
+            logo.classList.remove('opacity-0');
+            logo.classList.add('opacity-100');
+            logo.style.pointerEvents = 'auto';
+        } else {
+            // Hide logo in Hero (clean) AND Citation (avoid overlap)
+            logo.classList.remove('opacity-100');
+            logo.classList.add('opacity-0');
+            logo.style.pointerEvents = 'none';
+        }
+    }
+
+    function resetHome() { document.body.classList.remove('has-searched'); showView('heroSection'); $('heroInput').value = ''; $('heroInput').focus(); $('citationLayout').classList.add('hidden'); }
+    
+    function switchToResults(query) { 
+        document.body.classList.add('has-searched'); 
+        $('citationLayout').classList.add('hidden'); 
+        showView('resultsLayout');
+        $('headerInput').value = query; runSearch(query); 
+    }
+
+    // --- Citation View Logic ---
+    async function openCitationView(index) {
+        const item = STATE.currentItems[index]; if(!item) return;
+        
+        showView('citationLayout'); // This will trigger logo hiding
+        
+        $('citedWorkTitle').innerText = item.title;
+        $('citationResultsArea').innerHTML = `<div class="py-10"><div class="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-4"></div></div>`;
+        $('citationStatus').innerText = "正在加载引用列表...";
+
+        let filter = "";
+        if (item.openAlexId) filter = `cites:${item.openAlexId}`;
+        else if (item.doi) filter = `cites:doi:${item.doi}`;
+        
+        if (!filter) {
+            $('citationResultsArea').innerHTML = `<div class="text-gray-500 mt-4">无法找到此条目的引用索引 ID。</div>`;
+            return;
+        }
+
+        const url = `https://api.openalex.org/works?filter=${filter}&per-page=50`;
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            const items = processOpenAlexItems(data.results, true, true); // Reuse processor
+            renderCitations(items);
+            $('citationStatus').innerText = `共找到 ${data.meta.count} 条引用`;
+        } catch (e) {
+            $('citationResultsArea').innerHTML = `<div class="text-red-600 text-sm">加载失败: ${e.message}</div>`;
+        }
+    }
+
+    function closeCitationView() {
+        $('citationLayout').classList.add('hidden');
+        $('citationLayout').classList.remove('active');
+        showView('resultsLayout'); // This restores the logo
+    }
+
+    function renderCitations(items) {
+        const container = $('citationResultsArea');
+        if (items.length === 0) { container.innerHTML = `<div class="text-gray-500 mt-4">暂无引用数据。</div>`; return; }
+        let html = '';
+        items.forEach(item => {
+            html += `<div class="mb-4 pb-4 border-b border-gray-50"><h3 class="text-base leading-snug mb-1"><a href="${item.url}" target="_blank" class="text-link hover:underline font-medium">${item.title}</a></h3><div class="text-xs text-gray-600"><span class="font-medium text-gray-800">${item.author}</span> - <span class="text-meta">${item.source}</span>, ${item.year}</div></div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    // --- Search Core ---
+    function runSearch(forcedQuery) {
+        let q = forcedQuery;
+        if (!q && $('headerInput')) q = $('headerInput').value.trim();
+        if (!q) q = STATE.query;
+        if (!q) return;
+
+        STATE.page = 1; STATE.query = q; STATE.loaded = 0; STATE.currentItems = [];
+        
+        if($('headerInput')) $('headerInput').value = q;
+        $('resultsArea').innerHTML = `<div class="py-10"><div class="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-4"></div></div>`;
+        $('statusText').innerHTML = "正在检索...";
+        $('loadMoreContainer').classList.add('hidden');
+        $('btnLoadMore').classList.remove('hidden');
+        $('loadingMoreText').classList.add('hidden');
+        $('loadingMoreText').classList.remove('block');
+        $('endOfResultsText').classList.add('hidden');
+
+        fetchData(1);
+    }
+    
+    function loadNextPage() { STATE.page++; $('btnLoadMore').classList.add('hidden'); $('loadingMoreText').classList.remove('hidden'); $('loadingMoreText').classList.add('block'); fetchData(STATE.page); }
+
+    // --- Data Fetching ---
+    async function fetchData(page) {
+        const useRepo = $('chkRepo').checked;
+        const useDataPaper = $('chkDataPaper').checked;
+        const useJournal = $('chkJournal').checked;
+
+        try {
+            const promises = [];
+            if (useDataPaper || useJournal) promises.push(fetchOpenAlex(STATE.query, useDataPaper, useJournal, page));
+            if (useRepo) promises.push(fetchDataCiteEnhanced(STATE.query, page));
+
+            const results = await Promise.all(promises);
+            if (page === 1) { STATE.total = 0; if (results[0]?.metaCount) STATE.total += results[0].metaCount; if (results[1]?.length) STATE.total += 1000; }
+            let newItems = [];
+            results.forEach(res => { if(Array.isArray(res)) newItems = newItems.concat(res); else if(res?.items) newItems = newItems.concat(res.items); });
+
+            if (STATE.filters.sort === 'date') newItems.sort((a, b) => b.year - a.year);
+            else if (STATE.filters.sort === 'cited') newItems.sort((a, b) => (b.cited||0) - (a.cited||0));
+            else { newItems.sort((a, b) => b.weight - a.weight); }
+            
+            if (STATE.filters.lang === 'cn') newItems = newItems.filter(item => /[\u4e00-\u9fa5]/.test(item.title) || /China|Chinese/.test(item.source));
+
+            const startIndex = STATE.currentItems.length;
+            STATE.currentItems = STATE.currentItems.concat(newItems);
+            renderResults(newItems, page, startIndex);
+            STATE.loaded += newItems.length;
+            $('statusText').innerText = `找到约 ${STATE.total.toLocaleString()} 条结果`;
+
+            $('loadMoreContainer').classList.remove('hidden');
+            if (newItems.length > 0) { $('btnLoadMore').classList.remove('hidden'); $('loadingMoreText').classList.add('hidden'); $('loadingMoreText').classList.remove('block'); }
+            else { $('btnLoadMore').classList.add('hidden'); $('loadingMoreText').classList.add('hidden'); if (page > 1) $('endOfResultsText').classList.remove('hidden'); else $('loadMoreContainer').classList.add('hidden'); }
+        } catch (e) { console.error(e); if (page === 1) $('resultsArea').innerHTML = `<div class="text-red-600 text-sm">检索出错: ${e.message}</div>`; }
+    }
+
+    async function fetchOpenAlex(query, wantDataPaper, wantJournal, page) {
+        let q = query; 
+        if (wantDataPaper) q += " (dataset OR database OR \"Scientific Data\" OR \"Earth System Science Data\" OR \"Big Data\")";
+
+        let filters = [];
+        if (STATE.filters.time !== 'all') { const y = new Date().getFullYear(); filters.push(`publication_year:${STATE.filters.time}-${y+1}`); }
+        
+        let sortParam = 'relevance_score:desc'; 
+        if (STATE.filters.sort === 'date') sortParam = 'publication_date:desc';
+        if (STATE.filters.sort === 'cited') sortParam = 'cited_by_count:desc';
+
+        const filterStr = filters.length > 0 ? `&filter=${filters.join(',')}` : '';
+        const url = `https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=50&page=${page}&sort=${sortParam}${filterStr}`;
+        try {
+            const res = await fetch(url); const data = await res.json();
+            const items = processOpenAlexItems(data.results, wantDataPaper, wantJournal);
+            return { items: items, metaCount: data.meta.count };
+        } catch (e) { return { items: [], metaCount: 0 }; }
+    }
+
+    function processOpenAlexItems(results, wantDataPaper, wantJournal) {
+        return results.map(item => {
+            const src = item.primary_location?.source?.display_name || "Journal";
+            let author = item.authorships?.[0]?.author?.display_name || "Unknown";
+            if (item.authorships?.length > 1) author += " et al.";
+            
+            let weight = 0; let label = "Article"; let type = "journal";
+            
+            const isTier1 = TIER_1_JOURNALS.some(j => src && src.toLowerCase().includes(j.toLowerCase()));
+            const isDataContent = /dataset|database|big data|inventory/i.test(item.title);
+
+            if (isTier1) { weight = 2000; label = "Data Journal"; type = "paper"; } 
+            else if (isDataContent) { weight = 800; label = "Data Paper"; type = "paper"; }
+            
+            if (wantDataPaper && !wantJournal) {
+                if (!isTier1 && !src.toLowerCase().includes("data")) return null;
+                type = "paper"; 
+            }
+
+            if (type === "paper" && !wantDataPaper) return null; 
+            if (type === "journal" && !wantJournal) return null;
+
+            const oaId = item.id.split('/').pop();
+
+            return { 
+                title: item.title, url: item.doi || item.primary_location?.landing_page_url, 
+                source: src, year: item.publication_year, author: author, cited: item.cited_by_count, 
+                type: type, label, weight, 
+                doi: item.doi ? item.doi.replace('https://doi.org/', '') : '',
+                openAlexId: oaId 
+            };
+        }).filter(i => i !== null);
+    }
+
+    async function fetchDataCiteEnhanced(query, page) {
+        const prefixQuery = REPO_PREFIXES.map(p => `prefix:${p}`).join(' OR ');
+        let dateQuery = ''; if (STATE.filters.time !== 'all') { const y = new Date().getFullYear() + 1; dateQuery = ` AND publicationYear:[${STATE.filters.time} TO ${y}]`; }
+        const finalQuery = `(${encodeURIComponent(query)}) AND (${prefixQuery} OR resourceTypeGeneral:Dataset)${dateQuery}`;
+        let sortParam = ''; if (STATE.filters.sort === 'date') sortParam = '&sort=-published';
+        const url = `https://api.datacite.org/dois?query=${finalQuery}&page[size]=25&page[number]=${page}${sortParam}`;
+        try {
+            const res = await fetch(url); const data = await res.json();
+            return data.data.map(item => {
+                const attr = item.attributes; const doi = item.id; let label = "Dataset"; 
+                let weight = 60; let pub = attr.publisher || "Repository"; 
+                let author = attr.creators?.[0]?.name || "Unknown";
+                if (author.includes(',')) author = author.split(',').reverse().join(' ');
+                if (doi.startsWith("10.6084")) { label = "Figshare"; weight = 140; } 
+                else if (doi.startsWith("10.11888")) { label = "ScienceDB"; weight = 160; } 
+                return { title: attr.titles?.[0]?.title || "Untitled", url: `https://doi.org/${doi}`, source: pub, year: attr.publicationYear || "N/A", author: author, cited: null, type: "repo", label, weight, doi: doi, openAlexId: null };
+            });
+        } catch (e) { return []; }
+    }
+
+    function renderResults(items, page, startIndex) {
+        const container = $('resultsArea');
+        if (page === 1) container.innerHTML = ''; 
+        if (page === 1 && items.length === 0) { container.innerHTML = `<div class="text-gray-500 mt-10">未找到符合条件的结果。<br><span class="text-xs">建议：放宽时间范围或尝试英文关键词</span></div>`; return; }
+        
+        let html = '';
+        items.forEach((item, i) => {
+            const globalIndex = startIndex + i;
+            let typeTag = ''; 
+            if (item.type === 'repo') typeTag = `<span class="text-green-700 font-bold text-xs mr-1">[DATA]</span>`; 
+            if (item.type === 'paper') typeTag = `<span class="text-blue-700 font-bold text-xs mr-1">[PAPER]</span>`;
+            let sourceClass = "text-meta"; if (item.source && (item.source.includes("China") || item.source.includes("中国"))) sourceClass = "text-orange-600 font-bold";
+            
+            let citedHtml = '';
+            if (item.cited && item.cited > 0) {
+                citedHtml = `<button onclick="openCitationView(${globalIndex})" class="hover:text-blue-700 hover:underline">被引用次数：${item.cited}</button>`;
+            }
+
+            html += `<div class="mb-6"><h3 class="text-lg leading-snug mb-1"><a href="${item.url}" target="_blank" class="text-link hover:underline font-medium">${typeTag}${item.title}</a></h3><div class="text-sm text-gray-600 mb-1"><span class="font-medium text-gray-800">${item.author}</span> - <span class="${sourceClass}">${item.source || 'Unknown'}</span>, ${item.year} - <span class="text-gray-500">DOI:${item.doi}</span></div><div class="text-xs text-gray-500 flex gap-3">${citedHtml}<button onclick="openCiteModal(${globalIndex})" class="hover:text-blue-700 hover:underline flex items-center gap-1"><i class="fa-solid fa-quote-right"></i> 引用</button></div></div>`;
+        });
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    // --- Input & Filter Handlers ---
+    function handleHeroEnter(e) { if(e.key==='Enter') triggerSearchFromHero(); }
+    function triggerSearchFromHero() { const val=$('heroInput').value.trim(); if(val) switchToResults(val); }
+    function handleHeaderEnter(e) { if(e.key==='Enter') runSearch(); }
+    function triggerSearchFromHeader() { runSearch(); }
+    function quickSearchHero(val) { switchToResults(val); }
+    function toggleModal(name) { const m=$(`modal-${name}`); if(m.classList.contains('hidden')){ m.classList.remove('hidden'); setTimeout(()=>{m.classList.remove('opacity-0'); m.firstElementChild.classList.remove('scale-95')},10); } else { m.classList.add('opacity-0'); m.firstElementChild.classList.add('scale-95'); setTimeout(()=>m.classList.add('hidden'),200); } }
+    function setFilter(type, value) {
+        document.querySelectorAll(`[id^="filter-${type}-"]`).forEach(el => el?.classList.remove('active'));
+        const target = $(`filter-${type}-${value}`); if(target) target.classList.add('active');
+        STATE.filters[type] = value;
+        runSearch();
+    }
+
+    // --- Misc ---
+    async function generateRealTimeKeywords() {
+        const url = `https://api.crossref.org/works?filter=issn:1866-3516,issn:2052-4463&sort=published&order=desc&rows=50&select=title`;
+        try {
+            const res = await fetch(url); const data = await res.json();
+            const titles = data.message.items.map(item => item.title[0]);
+            const wordCount = {}; const STOP_WORDS = new Set(["the", "and", "of", "in", "a", "for", "to", "with", "on", "dataset", "data", "database", "global", "analysis", "study", "high", "resolution", "time", "series", "china", "world", "model", "change", "during", "over", "system", "using", "based", "from", "assessment", "spatial", "temporal"]);
+            titles.forEach(title => { const words = title.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/); words.forEach(word => { if (word.length > 3 && !STOP_WORDS.has(word) && isNaN(word)) { const cleanWord = word.charAt(0).toUpperCase() + word.slice(1); wordCount[cleanWord] = (wordCount[cleanWord] || 0) + 1; } }); });
+            const sortedWords = Object.entries(wordCount).sort((a, b) => b[1] - a[1]).slice(0, 6).map(e=>e[0]);
+            $('heroTrendTags').innerHTML = sortedWords.map(tag => `<button onclick="quickSearchHero('${tag}')" class="text-gray-600 hover:text-blue-700 hover:bg-white bg-gray-100 px-4 py-1.5 rounded-full text-sm transition border border-transparent hover:border-gray-300 shadow-sm">${tag}</button>`).join('');
+        } catch(e) {}
+    }
+    async function loadTrending() {
+        const area = $('trendingArea');
+        const url = `https://api.crossref.org/works?filter=issn:1866-3516,issn:2052-4463&sort=published&order=desc&rows=8`;
+        try {
+            const res = await fetch(url); const data = await res.json();
+            let html = ''; data.message.items.forEach(item => { const isESSD = item['container-title']?.[0].includes("System"); const badge = isESSD ? "ESSD" : "SciData"; html += `<a href="${item.URL}" target="_blank" class="block mb-3 group"><div class="text-blue-700 group-hover:underline text-sm font-medium line-clamp-2">${item.title?.[0]}</div><div class="text-xs text-green-700">${badge} - ${item.created['date-parts'][0][0]}</div></a>`; }); area.innerHTML = html;
+        } catch (e) {}
+    }
+</script>
+</body>
+</html>
