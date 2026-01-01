@@ -38,10 +38,11 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .glass-panel { background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid #dfe1e5; }
         
-        .view-section { display: none; flex-direction: column; height: 100%; }
-        .view-section.active { display: flex; }
+        .view-home { display: flex; }
+        .view-results { display: none; }
+        body.has-searched .view-home { display: none; }
+        body.has-searched .view-results { display: flex; }
 
-        /* Sidebar Styles */
         .sidebar-group { margin-bottom: 20px; }
         .sidebar-link { display: block; color: #1a0dab; padding: 4px 0; cursor: pointer; text-decoration: none; }
         .sidebar-link:hover { text-decoration: underline; }
@@ -54,11 +55,13 @@
         .ext-link { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; margin-bottom: 4px; border-radius: 4px; color: #3c4043; background: #f8f9fa; font-size: 13px; text-decoration: none; transition: background 0.2s; }
         .ext-link:hover { background: #e8f0fe; color: #1a0dab; }
 
-        /* Citation Modal */
         .cite-row { margin-bottom: 16px; }
         .cite-format { color: #5f6368; font-size: 13px; margin-bottom: 4px; }
         .cite-content { font-family: Arial, sans-serif; font-size: 14px; color: #202124; user-select: text; cursor: pointer; padding: 8px; background: #f8f9fa; border-radius: 4px; }
         .cite-content:hover { background: #e8f0fe; }
+        
+        .view-section { display: none; flex-direction: column; height: 100%; }
+        .view-section.active { display: flex; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden antialiased">
@@ -94,7 +97,7 @@
             </div>
             <input type="text" id="heroInput" 
                 class="block w-full pl-12 pr-12 py-4 bg-white border border-slate-200 rounded-full text-lg shadow-sm hover:shadow-md focus:shadow-lg focus:outline-none focus:border-primary transition-all duration-300"
-                placeholder="搜索关键词 (支持 DOI, 中英文主题, 例如: 碳中和, GDP)..." 
+                placeholder="搜索关键词 (支持中英文, 例如: 长江, wildfire, carbon)..." 
                 onkeypress="handleHeroEnter(event)">
             <button onclick="triggerSearchFromHero()" class="absolute right-3 top-2.5 bg-slate-100 hover:bg-primary hover:text-white text-slate-600 p-2 rounded-full transition-all">
                 <i class="fa-solid fa-arrow-right"></i>
@@ -141,7 +144,7 @@
                     <div class="sidebar-title">包含类型</div>
                     <label class="type-label"><input type="checkbox" id="chkRepo" checked onchange="runSearch()" class="accent-blue-600"><span>原始数据文件</span></label>
                     <label class="type-label"><input type="checkbox" id="chkDataPaper" checked onchange="runSearch()" class="accent-blue-600"><span>数据期刊</span></label>
-                    <label class="type-label"><input type="checkbox" id="chkJournal" onchange="runSearch()" class="accent-blue-600"><span>综合学术期刊</span></label>
+                    <label class="type-label"><input type="checkbox" id="chkJournal" onchange="runSearch()" class="accent-blue-600"><span>综合学术文献</span></label>
                 </div>
 
                 <div class="sidebar-group pt-4 border-t border-slate-200">
@@ -161,6 +164,10 @@
             <main class="flex-1 bg-white relative flex flex-col min-w-0 pt-4 pl-0 md:pl-4">
                 <div class="pb-2 border-b border-transparent flex justify-between items-center">
                     <span id="statusText" class="text-xs text-sidebar">DataRaven 准备就绪</span>
+                </div>
+                <div id="translationTip" class="hidden px-4 py-2 bg-blue-50 text-blue-700 text-xs rounded mb-4 mx-4 flex items-center gap-2 border border-blue-100">
+                    <i class="fa-solid fa-language"></i>
+                    <span id="transText"></span>
                 </div>
                 
                 <div id="resultsArea" class="flex-1 overflow-y-auto pr-2 space-y-6 scroll-smooth pb-20"></div>
@@ -195,7 +202,6 @@
                 </div>
             </div>
         </div>
-
         <div class="flex flex-1 overflow-hidden max-w-screen-xl mx-auto w-full px-4 lg:px-0">
             <main class="flex-1 bg-white relative flex flex-col min-w-0 pt-4">
                 <div id="citationStatus" class="pb-2 border-b border-transparent text-xs text-sidebar">正在加载引用列表...</div>
@@ -230,20 +236,34 @@
     </div>
 
 <script>
-    // --- State ---
     let STATE = { page: 1, query: "", total: 0, loaded: 0, filters: { time: 'all', sort: 'relevance', lang: 'all' }, currentItems: [] };
 
-    // --- Config ---
     const TIER_1_JOURNALS = [
         "Scientific Data", "Earth System Science Data", "China Scientific Data", "中国科学数据", 
         "Global Change Data", "Big Earth Data", "GigaScience", "Big Data Research", "Journal of Big Data", 
         "International Journal of Digital Earth", "Data in Brief", "Biodiversity Data Journal", "Geoscience Data Journal"
     ];
     const REPO_PREFIXES = ["10.6084", "10.5281", "10.5061", "10.1594", "10.11888"]; 
+    
+    // --- 扩充版中英词典 (OR Logic) ---
+    const CN_MAP = {
+        "长江": "\"Yangtze River\"", "黄河": "\"Yellow River\"", "青藏高原": "\"Tibetan Plateau\"", 
+        "碳中和": "\"Carbon Neutrality\"", "气候变化": "\"Climate Change\"", "遥感": "\"Remote Sensing\"", 
+        "生物多样性": "\"Biodiversity\"", "地下水": "\"Groundwater\"", "人工智能": "\"Artificial Intelligence\"",
+        "深度学习": "\"Deep Learning\"", "机器学习": "\"Machine Learning\"", "神经网络": "\"Neural Networks\"",
+        "大数据": "\"Big Data\"", "物联网": "\"Internet of Things\"", "区块链": "\"Blockchain\"",
+        "新冠": "\"COVID-19\"", "病毒": "\"Virus\"", "基因组": "\"Genome\"", "蛋白质": "\"Protein\"",
+        "癌症": "\"Cancer\"", "肿瘤": "\"Tumor\"", "农业": "\"Agriculture\"", "粮食": "\"Food Security\"",
+        "水文": "\"Hydrology\"", "土壤": "\"Soil\"", "森林": "\"Forest\"", "海洋": "\"Ocean\"",
+        "极地": "\"Polar\"", "南极": "\"Antarctic\"", "北极": "\"Arctic\"", "冰川": "\"Glacier\"",
+        "经济": "\"Economy\"", "金融": "\"Finance\"", "贸易": "\"Trade\"", "城市": "\"Urban\"",
+        "人口": "\"Population\"", "教育": "\"Education\"", "心理": "\"Psychology\"", "社会": "\"Social\"",
+        "能源": "\"Energy\"", "电池": "\"Battery\"", "材料": "\"Material\"", "石墨烯": "\"Graphene\"",
+        "量子": "\"Quantum\"", "纳米": "\"Nano\"", "半导体": "\"Semiconductor\""
+    };
 
     window.onload = function() { loadTrending(); generateRealTimeKeywords(); };
 
-    // --- Helpers ---
     function $(id) { return document.getElementById(id); }
     function jumpTo(platform) {
         const q = STATE.query || ""; let url = "";
@@ -262,21 +282,18 @@
     function closeCiteModal() { $('modal-cite').classList.add('hidden'); }
     function copyText(t) { navigator.clipboard.writeText(t).then(() => { const toast=$('toast'); toast.classList.remove('hidden'); setTimeout(()=>toast.classList.add('hidden'),2000); closeCiteModal(); }); }
 
-    // --- View Logic (Fixed for Overlap) ---
     function showView(viewId) {
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
         if(viewId === 'resultsLayout') $(viewId).classList.add('active'); 
         else if(viewId === 'citationLayout') { $(viewId).classList.remove('hidden'); $(viewId).classList.add('active'); }
-        else $(viewId).classList.add('active'); // Hero
+        else $(viewId).classList.add('active'); 
         
-        // Logo Visibility Control
         const logo = $('navLogo');
         if (viewId === 'resultsLayout') {
             logo.classList.remove('opacity-0');
             logo.classList.add('opacity-100');
             logo.style.pointerEvents = 'auto';
         } else {
-            // Hide logo in Hero (clean) AND Citation (avoid overlap)
             logo.classList.remove('opacity-100');
             logo.classList.add('opacity-0');
             logo.style.pointerEvents = 'none';
@@ -292,12 +309,9 @@
         $('headerInput').value = query; runSearch(query); 
     }
 
-    // --- Citation View Logic ---
     async function openCitationView(index) {
         const item = STATE.currentItems[index]; if(!item) return;
-        
-        showView('citationLayout'); // This will trigger logo hiding
-        
+        showView('citationLayout'); 
         $('citedWorkTitle').innerText = item.title;
         $('citationResultsArea').innerHTML = `<div class="py-10"><div class="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-4"></div></div>`;
         $('citationStatus').innerText = "正在加载引用列表...";
@@ -315,7 +329,7 @@
         try {
             const res = await fetch(url);
             const data = await res.json();
-            const items = processOpenAlexItems(data.results, true, true); // Reuse processor
+            const items = processOpenAlexItems(data.results, true, true); 
             renderCitations(items);
             $('citationStatus').innerText = `共找到 ${data.meta.count} 条引用`;
         } catch (e) {
@@ -326,7 +340,7 @@
     function closeCitationView() {
         $('citationLayout').classList.add('hidden');
         $('citationLayout').classList.remove('active');
-        showView('resultsLayout'); // This restores the logo
+        showView('resultsLayout'); 
     }
 
     function renderCitations(items) {
@@ -339,7 +353,6 @@
         container.innerHTML = html;
     }
 
-    // --- Search Core ---
     function runSearch(forcedQuery) {
         let q = forcedQuery;
         if (!q && $('headerInput')) q = $('headerInput').value.trim();
@@ -351,6 +364,7 @@
         if($('headerInput')) $('headerInput').value = q;
         $('resultsArea').innerHTML = `<div class="py-10"><div class="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-4"></div></div>`;
         $('statusText').innerHTML = "正在检索...";
+        $('translationTip').classList.add('hidden'); // Reset tip
         $('loadMoreContainer').classList.add('hidden');
         $('btnLoadMore').classList.remove('hidden');
         $('loadingMoreText').classList.add('hidden');
@@ -362,7 +376,6 @@
     
     function loadNextPage() { STATE.page++; $('btnLoadMore').classList.add('hidden'); $('loadingMoreText').classList.remove('hidden'); $('loadingMoreText').classList.add('block'); fetchData(STATE.page); }
 
-    // --- Data Fetching ---
     async function fetchData(page) {
         const useRepo = $('chkRepo').checked;
         const useDataPaper = $('chkDataPaper').checked;
@@ -396,8 +409,39 @@
         } catch (e) { console.error(e); if (page === 1) $('resultsArea').innerHTML = `<div class="text-red-600 text-sm">检索出错: ${e.message}</div>`; }
     }
 
+    // --- 中文翻译逻辑 (OR Mode) ---
+    function translateQuery(q) {
+        let finalQ = q;
+        let hasTrans = false;
+        let transTips = [];
+        
+        Object.keys(CN_MAP).forEach(cn => {
+            // 如果 query 包含这个中文词
+            if (q.includes(cn)) {
+                // 将 "长江" 替换为 "(长江 OR "Yangtze")"
+                // 这样既搜中文，也搜英文，扩大召回
+                const replacement = `(${cn} OR ${CN_MAP[cn]})`;
+                finalQ = finalQ.replace(cn, replacement);
+                transTips.push(`${cn} -> ${CN_MAP[cn]}`);
+                hasTrans = true;
+            }
+        });
+
+        // 显示翻译提示
+        const tipEl = $('translationTip');
+        const textEl = $('transText');
+        if (hasTrans) {
+            textEl.innerText = "已自动关联英文关键词: " + transTips.join(', ');
+            tipEl.classList.remove('hidden');
+        } else {
+            tipEl.classList.add('hidden');
+        }
+        
+        return finalQ;
+    }
+
     async function fetchOpenAlex(query, wantDataPaper, wantJournal, page) {
-        let q = query; 
+        let q = translateQuery(query); // 应用翻译
         if (wantDataPaper) q += " (dataset OR database OR \"Scientific Data\" OR \"Earth System Science Data\" OR \"Big Data\")";
 
         let filters = [];
@@ -453,7 +497,12 @@
     async function fetchDataCiteEnhanced(query, page) {
         const prefixQuery = REPO_PREFIXES.map(p => `prefix:${p}`).join(' OR ');
         let dateQuery = ''; if (STATE.filters.time !== 'all') { const y = new Date().getFullYear() + 1; dateQuery = ` AND publicationYear:[${STATE.filters.time} TO ${y}]`; }
+        
+        // DataCite 也应用翻译后的 Query
+        // 注意：DataCite 对复杂 query 支持一般，这里只传 translation 后的文本，不再做 OR 扩展以防 URL 过长报错
+        // 实际上 DataCite 搜中文效果较差，主要靠 OpenAlex
         const finalQuery = `(${encodeURIComponent(query)}) AND (${prefixQuery} OR resourceTypeGeneral:Dataset)${dateQuery}`;
+        
         let sortParam = ''; if (STATE.filters.sort === 'date') sortParam = '&sort=-published';
         const url = `https://api.datacite.org/dois?query=${finalQuery}&page[size]=25&page[number]=${page}${sortParam}`;
         try {
@@ -481,19 +530,23 @@
             let typeTag = ''; 
             if (item.type === 'repo') typeTag = `<span class="text-green-700 font-bold text-xs mr-1">[DATA]</span>`; 
             if (item.type === 'paper') typeTag = `<span class="text-blue-700 font-bold text-xs mr-1">[PAPER]</span>`;
-            let sourceClass = "text-meta"; if (item.source && (item.source.includes("China") || item.source.includes("中国"))) sourceClass = "text-orange-600 font-bold";
+            let sourceClass = "text-meta"; 
+            let cnTag = "";
+            if (item.source && (item.source.includes("China") || item.source.includes("中国") || /[\u4e00-\u9fa5]/.test(item.title))) {
+                sourceClass = "text-orange-600 font-bold";
+                cnTag = `<span class="text-[10px] bg-orange-100 text-orange-600 px-1 rounded ml-1">CN</span>`;
+            }
             
             let citedHtml = '';
             if (item.cited && item.cited > 0) {
                 citedHtml = `<button onclick="openCitationView(${globalIndex})" class="hover:text-blue-700 hover:underline">被引用次数：${item.cited}</button>`;
             }
 
-            html += `<div class="mb-6"><h3 class="text-lg leading-snug mb-1"><a href="${item.url}" target="_blank" class="text-link hover:underline font-medium">${typeTag}${item.title}</a></h3><div class="text-sm text-gray-600 mb-1"><span class="font-medium text-gray-800">${item.author}</span> - <span class="${sourceClass}">${item.source || 'Unknown'}</span>, ${item.year} - <span class="text-gray-500">DOI:${item.doi}</span></div><div class="text-xs text-gray-500 flex gap-3">${citedHtml}<button onclick="openCiteModal(${globalIndex})" class="hover:text-blue-700 hover:underline flex items-center gap-1"><i class="fa-solid fa-quote-right"></i> 引用</button></div></div>`;
+            html += `<div class="mb-6"><h3 class="text-lg leading-snug mb-1"><a href="${item.url}" target="_blank" class="text-link hover:underline font-medium">${typeTag}${item.title}${cnTag}</a></h3><div class="text-sm text-gray-600 mb-1"><span class="font-medium text-gray-800">${item.author}</span> - <span class="${sourceClass}">${item.source || 'Unknown'}</span>, ${item.year} - <span class="text-gray-500">DOI:${item.doi}</span></div><div class="text-xs text-gray-500 flex gap-3">${citedHtml}<button onclick="openCiteModal(${globalIndex})" class="hover:text-blue-700 hover:underline flex items-center gap-1"><i class="fa-solid fa-quote-right"></i> 引用</button></div></div>`;
         });
         container.insertAdjacentHTML('beforeend', html);
     }
 
-    // --- Input & Filter Handlers ---
     function handleHeroEnter(e) { if(e.key==='Enter') triggerSearchFromHero(); }
     function triggerSearchFromHero() { const val=$('heroInput').value.trim(); if(val) switchToResults(val); }
     function handleHeaderEnter(e) { if(e.key==='Enter') runSearch(); }
@@ -507,7 +560,6 @@
         runSearch();
     }
 
-    // --- Misc ---
     async function generateRealTimeKeywords() {
         const url = `https://api.crossref.org/works?filter=issn:1866-3516,issn:2052-4463&sort=published&order=desc&rows=50&select=title`;
         try {
