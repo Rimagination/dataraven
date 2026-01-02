@@ -13,23 +13,10 @@
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['Arial', 'sans-serif'],
-            serif: ['"Roboto Slab"', 'serif']
-          },
-          colors: {
-            primary: '#202124',
-            link: '#1a0dab',
-            meta: '#006621',
-            sidebar: '#5f6368',
-            active: '#202124',
-          },
-          animation: {
-            'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-          },
-          keyframes: {
-            slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
-          }
+          fontFamily: { sans: ['Arial', 'sans-serif'], serif: ['"Roboto Slab"', 'serif'] },
+          colors: { primary: '#202124', link: '#1a0dab', meta: '#006621', sidebar: '#5f6368', active: '#202124' },
+          animation: { 'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards' },
+          keyframes: { slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } } }
         }
       }
     }
@@ -39,12 +26,10 @@
     body { background-color: #ffffff; color: #202124; font-size: 14px; -webkit-tap-highlight-color: transparent; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .glass-panel { background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid #dfe1e5; }
-
-    .view-section { display: none; flex-direction: column; height: 100%; }
+    .view-section { display: none; flex-direction: column; height: 100%; width: 100%; }
     .view-section.active { display: flex; }
-
-    /* Desktop Sidebar */
-    .sidebar-group { margin-bottom: 20px; }
+    
+    /* Sidebar */
     .sidebar-link { display: block; color: #1a0dab; padding: 4px 0; cursor: pointer; text-decoration: none; }
     .sidebar-link:hover { text-decoration: underline; }
     .sidebar-link.active { color: #202124; font-weight: 700; text-decoration: none; cursor: default; }
@@ -54,14 +39,14 @@
     .date-input:focus { border-color: #1a0dab; }
     .date-btn { background: #1a0dab; color: white; border: none; border-radius: 4px; padding: 3px 8px; font-size: 12px; cursor: pointer; margin-left: 4px; }
 
+    /* Checkbox & Links */
     .type-label { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; color: #3c4043; }
     .ext-link { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; margin-bottom: 4px; border-radius: 4px; color: #3c4043; background: #f8f9fa; font-size: 13px; text-decoration: none; transition: background 0.2s; }
     .ext-link:hover { background: #e8f0fe; color: #1a0dab; }
 
     /* Citation modal */
-    .cite-row { margin-bottom: 16px; }
-    .cite-format { color: #5f6368; font-size: 13px; margin-bottom: 4px; }
     .cite-content { font-family: Arial, sans-serif; font-size: 14px; color: #202124; user-select: text; cursor: pointer; padding: 8px; background: #f8f9fa; border-radius: 4px; }
+    .cite-content:hover { background: #e8f0fe; }
 
     /* Pager */
     .pager { display:flex; justify-content:center; align-items:center; gap: 6px; padding: 22px 0; user-select:none; }
@@ -69,12 +54,10 @@
     .pager-btn:disabled { opacity:.35; cursor:not-allowed; }
     .pager-page.active { background:#1d4ed8; border-color:#1d4ed8; color:#fff; font-weight:700; cursor:default; }
     
-    /* Mobile-Specific Tweaks */
+    /* Mobile Tweaks */
     @media (max-width: 768px) {
-        /* Result Item Spacing */
         .result-item { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #f3f4f6; }
         .result-item:last-child { border-bottom: none; }
-        /* iOS Input Font Size Fix (Prevents Zoom) */
         input[type="text"] { font-size: 16px !important; }
     }
   </style>
@@ -83,14 +66,16 @@
 <body class="h-screen flex flex-col overflow-hidden antialiased">
 
   <nav class="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-6 py-4 transition-all duration-300 pointer-events-none" id="topNav">
-    <div class="opacity-0 transition-opacity duration-300 cursor-pointer flex items-end gap-2 pointer-events-auto hidden md:flex" id="navLogo" onclick="resetHome()">
+    
+    <div class="opacity-0 transition-opacity duration-300 cursor-pointer flex items-end gap-2 pointer-events-auto" id="navLogo" onclick="resetHome()">
       <div class="w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-md mb-0.5"><i class="fa-solid fa-crow"></i></div>
       <div class="flex items-baseline">
         <span class="font-bold text-xl tracking-tight text-slate-900 font-serif">DataRaven</span>
         <span class="text-xs font-normal text-slate-500 ml-1.5 transform translate-y-[-2px]">数鸦</span>
       </div>
     </div>
-    <div class="flex items-center gap-4 pointer-events-auto ml-auto">
+
+    <div class="flex items-center gap-4 pointer-events-auto ml-auto" id="navAbout">
       <button onclick="toggleModal('about')" class="text-sm text-sidebar hover:text-primary transition bg-white/80 backdrop-blur px-3 py-1 rounded-full shadow-sm border border-slate-100 md:border-none md:shadow-none md:bg-transparent">关于本站</button>
     </div>
   </nav>
@@ -124,10 +109,8 @@
     </div>
   </div>
 
-  <div id="resultsLayout" class="view-section pt-14 md:pt-16">
-    
+  <div id="resultsLayout" class="view-section pt-14 md:pt-16 hidden">
     <div class="glass-panel absolute top-0 left-0 w-full h-14 md:h-16 z-40 flex items-center px-2 md:px-6 gap-2 md:gap-0">
-      
       <button onclick="resetHome()" class="md:hidden w-9 h-9 flex-shrink-0 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center active:scale-95 transition">
         <i class="fa-solid fa-arrow-left text-sm"></i>
       </button>
@@ -209,15 +192,35 @@
     </div>
   </div>
 
+  <div id="citationLayout" class="view-section pt-14 md:pt-16 bg-white hidden">
+    <div class="glass-panel absolute top-0 left-0 w-full h-14 md:h-16 z-50 flex items-center px-2 md:px-6 shadow-sm border-b border-slate-200">
+      <div class="w-full max-w-screen-xl mx-auto flex items-center gap-3 md:gap-4">
+        <button onclick="closeCitationView()" class="w-9 h-9 md:w-8 md:h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition group">
+          <i class="fa-solid fa-arrow-left text-slate-600 group-hover:text-primary text-sm"></i>
+        </button>
+        <div class="flex-1 min-w-0">
+          <div class="text-[10px] md:text-xs text-slate-500 mb-0.5">引用追踪 (Cited by)</div>
+          <div id="citedWorkTitle" class="text-sm font-bold text-slate-800 truncate font-serif">...</div>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-1 overflow-hidden max-w-screen-xl mx-auto w-full px-0 md:px-4">
+      <main class="flex-1 bg-white relative flex flex-col min-w-0 pt-4 px-4 md:px-0">
+        <div id="citationStatus" class="pb-2 border-b border-transparent text-xs text-sidebar">正在加载引用列表...</div>
+        <div id="citationResultsArea" class="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4 scroll-smooth pb-20 no-scrollbar"></div>
+      </main>
+    </div>
+  </div>
+
   <div id="modal-cite" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4" onclick="closeCiteModal()">
     <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
       <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-        <h3 class="text-base font-bold text-slate-800">引用格式 (Cite)</h3>
+        <h3 class="text-base font-bold text-slate-800">引用格式</h3>
         <button onclick="closeCiteModal()" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center transition"><i class="fa-solid fa-xmark text-slate-500"></i></button>
       </div>
       <div class="p-5" id="citeContentArea"></div>
       <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex gap-4 text-xs font-medium text-blue-700">
-        <button class="hover:underline">BibTeX</button>
+        <button class="hover:underline" onclick="copyBibtex()">BibTeX</button>
       </div>
     </div>
   </div>
@@ -238,7 +241,6 @@
             <li><strong>China Data:</strong> ScienceDB (科学数据银行), CSCD</li>
           </ul>
           <p class="text-[10px] text-slate-400 pt-2 italic">* ScienceDB data is indexed via DataCite API.</p>
-          
           <div class="border-t border-slate-200 pt-3 mt-3">
             <p class="font-bold text-slate-800 mb-1 text-xs">Developer</p>
             <div class="flex items-center gap-2">
@@ -262,7 +264,8 @@
     filters: { time: 'all', sort: 'relevance' },
     currentItems: [],
     totals: { rawAll: 0, filteredEst: 0 },
-    perPage: { openalex: 50, datacite: 25 }
+    perPage: { openalex: 50, datacite: 25 },
+    currentCiteIndex: -1 // Track which item is being cited
   };
 
   const TIER_1_JOURNALS = [
@@ -293,22 +296,35 @@
   function $(id){ return document.getElementById(id); }
 
   function showView(viewId) {
-    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-    $(viewId).classList.add('active');
+    document.querySelectorAll('.view-section').forEach(el => {
+        el.classList.remove('active');
+        el.classList.add('hidden'); 
+    });
     
-    // Logo 逻辑：电脑端结果页显示，手机端结果页隐藏（防重叠）
+    const target = $(viewId);
+    target.classList.remove('hidden'); 
+    target.classList.add('active');
+    
+    // --- 核心修复：移动端/电脑端导航栏显示逻辑 ---
+    const topNav = $('topNav');
     const logo = $('navLogo');
-    if (viewId === 'resultsLayout') {
-      if(window.innerWidth >= 768) {
+    const about = $('navAbout');
+
+    if (viewId === 'resultsLayout' || viewId === 'citationLayout') {
+      if(window.innerWidth < 768) {
+          // Mobile: Hide Top Nav completely to save space for Search Bar
+          topNav.classList.add('hidden');
+      } else {
+          // Desktop: Show Top Nav
+          topNav.classList.remove('hidden');
+          // Ensure Logo is visible
           logo.classList.remove('opacity-0');
           logo.classList.add('opacity-100');
           logo.style.pointerEvents = 'auto';
-          logo.classList.remove('hidden');
-      } else {
-          logo.classList.add('hidden'); 
       }
     } else {
-      // 首页：显示 Logo (手机/电脑都显示，但手机端 TopNav 的 Logo 本来就是 hidden md:flex)
+      // Hero: Always Show Top Nav
+      topNav.classList.remove('hidden');
       logo.classList.remove('hidden');
       logo.classList.remove('opacity-100');
       logo.classList.add('opacity-0');
@@ -351,7 +367,6 @@
     }
   }
 
-  // --- Custom Date ---
   function toggleCustomDate() {
       const box = $('custom-date-box');
       if(box.classList.contains('hidden')) { box.classList.remove('hidden'); $('dateStart').focus(); } 
@@ -382,8 +397,68 @@
     goToPage(1);
   }
 
-  // --- Citation ---
+  // --- Citation View (3rd Page) ---
+  async function openCitationView(index) {
+    const item = STATE.currentItems[index];
+    if (!item) return;
+    
+    showView('citationLayout');
+    
+    $('citedWorkTitle').innerText = item.title;
+    $('citationResultsArea').innerHTML = `<div class="py-10"><div class="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-4"></div></div>`;
+    $('citationStatus').innerText = "正在加载引用列表...";
+
+    let filter = "";
+    if (item.openAlexId) filter = `cites:${item.openAlexId}`;
+    else if (item.doi) filter = `cites:doi:${item.doi}`;
+    
+    if (!filter) {
+        $('citationResultsArea').innerHTML = `<div class="text-gray-500 mt-4 text-center text-sm">暂无引用数据支持 (No Citation Data)</div>`;
+        return;
+    }
+
+    const url = `https://api.openalex.org/works?filter=${filter}&per-page=50`;
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const items = data.results.map(i => {
+             const src = i.primary_location?.source?.display_name || "Journal";
+             let auth = i.authorships?.[0]?.author?.display_name || "Unknown";
+             return { title: i.title, url: i.doi || i.primary_location?.landing_page_url, source: src, year: i.publication_year, author: auth };
+        });
+        renderCitations(items);
+        $('citationStatus').innerText = `共找到 ${data.meta.count} 条引用`;
+    } catch (e) {
+        $('citationResultsArea').innerHTML = `<div class="text-red-500 text-sm mt-4 text-center">加载失败，请重试</div>`;
+    }
+  }
+
+  function closeCitationView() {
+    showView('resultsLayout');
+  }
+
+  function renderCitations(items) {
+    const container = $('citationResultsArea');
+    if (items.length === 0) { container.innerHTML = `<div class="text-gray-500 mt-10 text-center text-sm">暂无引用记录</div>`; return; }
+    let html = '';
+    items.forEach(item => {
+        html += `
+        <div class="result-item mb-4 pb-4 border-b border-slate-100 last:border-0">
+            <h3 class="text-base leading-snug mb-1">
+                <a href="${item.url}" target="_blank" class="text-link hover:underline font-medium">${item.title}</a>
+            </h3>
+            <div class="text-xs text-gray-600">
+                <span class="font-bold text-gray-800">${item.author}</span> - 
+                <span class="text-meta">${item.source}</span>, ${item.year}
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  // --- Modal & Utils ---
   function openCiteModal(index) {
+    STATE.currentCiteIndex = index; // Store index for BibTeX generation
     const item = STATE.currentItems[index];
     if (!item) return;
     const gbt = `[1] ${item.author||'Anon'}. ${item.title}. ${item.source||'Unknown'}, ${item.year}. DOI:${item.doi || ''}`;
@@ -394,8 +469,34 @@
     `;
     $('modal-cite').classList.remove('hidden');
   }
+  
+  // --- BibTeX Logic (Fixed) ---
+  function copyBibtex() {
+      const idx = STATE.currentCiteIndex;
+      if (idx === -1) return;
+      const item = STATE.currentItems[idx];
+      const key = (item.author ? item.author.split(' ')[0] : 'anon') + item.year;
+      
+      const bib = `@article{${key},
+  title={${item.title}},
+  author={${item.author}},
+  journal={${item.source}},
+  year={${item.year}},
+  doi={${item.doi}}
+}`;
+      copyText(bib);
+  }
+
   function closeCiteModal(){ $('modal-cite').classList.add('hidden'); }
-  function copyText(t) { navigator.clipboard.writeText(t).then(() => { const toast=$('toast'); toast.classList.remove('hidden'); setTimeout(()=>toast.classList.add('hidden'),2000); closeCiteModal(); }); }
+  function copyText(t) { 
+      navigator.clipboard.writeText(t).then(() => { 
+          const toast=$('toast'); 
+          toast.innerText = t.startsWith('@') ? "BibTeX 已复制" : "引用已复制";
+          toast.classList.remove('hidden'); 
+          setTimeout(()=>toast.classList.add('hidden'), 2000); 
+          closeCiteModal(); 
+      }); 
+  }
 
   function expandQuery(q) {
     let finalQ = q;
@@ -507,7 +608,8 @@
         if (type === "journal" && !wantJournal) return null;
         const doi = item.doi ? item.doi.replace('https://doi.org/', '') : "";
         const urlOut = item.doi || item.primary_location?.landing_page_url || "";
-        return { title, url: urlOut, source: src, year, author, cited: item.cited_by_count || 0, type, label, weight, doi };
+        const oaId = item.id.split('/').pop();
+        return { title, url: urlOut, source: src, year, author, cited: item.cited_by_count || 0, type, label, weight, doi, openAlexId: oaId };
       }).filter(Boolean);
       return { items, metaCount: data?.meta?.count || 0, received, kept: items.length };
     } catch(e){ return { items: [], metaCount: 0, received: 0, kept: 0 }; }
@@ -561,9 +663,12 @@
       if (item.type === 'paper') typeTag = `<span class="text-blue-700 font-bold text-xs mr-1">[PAPER]</span>`;
       if (item.type === 'journal') typeTag = `<span class="text-slate-500 font-bold text-xs mr-1">[JOURNAL]</span>`;
       let sourceClass = "text-meta"; if (item.source && (item.source.includes("China") || item.source.includes("中国"))) sourceClass = "text-orange-600 font-bold";
-      const citedHtml = (item.cited !== null && item.cited !== undefined) ? `<span class="text-gray-500">被引用次数：${item.cited}</span>` : ``;
       
-      // Mobile tweak: add border for separation
+      let citedHtml = '';
+      if (item.cited && item.cited > 0) {
+          citedHtml = `<button onclick="openCitationView(${idx})" class="hover:text-blue-700 hover:underline">被引用次数：${item.cited}</button>`;
+      }
+
       html += `
         <div class="result-item mb-6">
           <h3 class="text-lg leading-snug mb-1">
