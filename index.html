@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=Roboto+Slab:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 
   <script>
     tailwind.config = {
@@ -24,6 +25,55 @@
 
   <style>
     body { background-color: #ffffff; color: #202124; font-size: 14px; -webkit-tap-highlight-color: transparent; }
+    .scansci-global-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 90;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      border-bottom: 1px solid #dfe1e5;
+      background: rgba(248, 251, 255, 0.97);
+      backdrop-filter: blur(6px);
+    }
+    .scansci-global-nav a { text-decoration: none; color: #1f3f5f; font-size: 12px; font-weight: 700; }
+    .scansci-global-nav a:hover { color: #0f6178; }
+    .scansci-global-menu { position: relative; }
+    .scansci-global-menu summary {
+      list-style: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: #294862;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid #d0dae7;
+      background: #f4f8ff;
+    }
+    .scansci-global-menu summary::-webkit-details-marker { display: none; }
+    .scansci-global-menu__panel {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      min-width: 210px;
+      border: 1px solid #d0dcef;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 10px 22px rgba(28, 42, 64, 0.16);
+      padding: 6px;
+      display: grid;
+      gap: 4px;
+    }
+    .scansci-global-menu__panel a { padding: 6px 8px; border-radius: 7px; }
+    .scansci-global-menu__panel a:hover { background: #eef5ff; }
+    .scansci-app-shell { margin-top: 40px; height: calc(100vh - 40px) !important; }
+    #topNav { top: 40px !important; }
+    #resultsLayout .glass-panel,
+    #citationLayout .glass-panel { top: 40px !important; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .glass-panel { background: rgba(255, 255, 255, 0.98); border-bottom: 1px solid #dfe1e5; }
     .view-section { display: none; flex-direction: column; height: 100%; width: 100%; }
@@ -50,6 +100,8 @@
     .pager-page.active { background:#1d4ed8; border-color:#1d4ed8; color:#fff; font-weight:700; cursor:default; }
     
     @media (max-width: 768px) {
+        .scansci-global-nav { padding: 0 10px; }
+        .scansci-global-menu__panel { min-width: 180px; }
         .result-item { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #f3f4f6; }
         .result-item:last-child { border-bottom: none; }
         input[type="text"] { font-size: 16px !important; }
@@ -58,6 +110,17 @@
 </head>
 
 <body class="h-screen flex flex-col overflow-hidden antialiased">
+  <nav class="scansci-global-nav">
+    <a href="https://www.scansci.com">ScanSci 首页</a>
+    <details class="scansci-global-menu">
+      <summary>应用导航</summary>
+      <div class="scansci-global-menu__panel">
+        <a href="https://dataset.scansci.com">DataRaven</a>
+        <a href="https://journal.scansci.com">Journal Scout</a>
+        <a href="https://citation.scansci.com">Citation Integrity Lab</a>
+      </div>
+    </details>
+  </nav>
 
   <nav class="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-6 py-4 transition-all duration-300 pointer-events-none" id="topNav">
     <div class="opacity-0 transition-opacity duration-300 cursor-pointer flex items-end gap-2 pointer-events-auto" id="navLogo" onclick="resetHome()">
@@ -72,7 +135,7 @@
     </div>
   </nav>
 
-  <div id="heroSection" class="view-section active flex-col items-center justify-center w-full h-full px-4 animate-slide-up">
+  <div id="heroSection" class="view-section scansci-app-shell active flex-col items-center justify-center w-full h-full px-4 animate-slide-up">
     <div class="mb-8 flex flex-col items-center">
       <div class="w-20 h-20 md:w-24 md:h-24 bg-primary text-white rounded-2xl flex items-center justify-center text-4xl md:text-5xl shadow-2xl mb-5">
         <i class="fa-solid fa-crow"></i>
@@ -101,7 +164,7 @@
     </div>
   </div>
 
-  <div id="resultsLayout" class="view-section pt-14 md:pt-16 hidden">
+  <div id="resultsLayout" class="view-section scansci-app-shell pt-14 md:pt-16 hidden">
     
     <div class="glass-panel absolute top-0 left-0 w-full h-14 md:h-16 z-40 flex items-center px-3 md:px-6 gap-3 md:gap-0 justify-between">
       
@@ -194,7 +257,7 @@
     </div>
   </div>
 
-  <div id="citationLayout" class="view-section pt-14 md:pt-16 bg-white hidden">
+  <div id="citationLayout" class="view-section scansci-app-shell pt-14 md:pt-16 bg-white hidden">
     <div class="glass-panel absolute top-0 left-0 w-full h-14 md:h-16 z-50 flex items-center px-3 md:px-6 shadow-sm border-b border-slate-200 gap-3">
       <button onclick="closeCitationView()" class="w-9 h-9 md:w-8 md:h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition group flex-shrink-0">
         <i class="fa-solid fa-arrow-left text-slate-600 group-hover:text-primary text-sm"></i>
