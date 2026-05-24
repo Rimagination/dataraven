@@ -40,6 +40,44 @@
       background: rgba(248, 251, 255, 0.97);
       backdrop-filter: blur(6px);
     }
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #4f5f72;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .brand:hover { color: #0f6178; }
+    .brand-logo {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      box-shadow: 0 0 0 1px rgba(28, 42, 64, 0.1), 0 2px 6px rgba(28, 42, 64, 0.08);
+    }
+    .brand-divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(28, 42, 64, 0.15);
+    }
+    .product-brand {
+      color: #1f3f5f;
+      font-family: 'Roboto Slab', serif;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .product-brand:hover { color: #0f6178; }
     .scansci-global-nav a { text-decoration: none; color: #1f3f5f; font-size: 12px; font-weight: 700; }
     .scansci-global-nav a:hover { color: #0f6178; }
     .scansci-global-menu { position: relative; }
@@ -111,13 +149,21 @@
 
 <body class="h-screen flex flex-col overflow-hidden antialiased">
   <nav class="scansci-global-nav">
-    <a href="https://www.scansci.com">ScanSci 首页</a>
+    <div class="brand-cluster">
+      <a class="brand" href="https://www.scansci.com/" target="_blank" rel="noreferrer">
+        <img class="brand-logo" src="./assets/brand/scansci-app-icon-64.png" alt="" aria-hidden="true">
+        <span>ScanSci 出品</span>
+      </a>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <a class="product-brand" href="https://dataset.scansci.com">DataRaven</a>
+    </div>
     <details class="scansci-global-menu">
       <summary>应用导航</summary>
       <div class="scansci-global-menu__panel">
+        <a href="https://easyslides.scansci.com">EasySlides</a>
         <a href="https://dataset.scansci.com">DataRaven</a>
         <a href="https://journal.scansci.com">Journal Scout</a>
-        <a href="https://citation.scansci.com">Citation Integrity Lab</a>
+        <a href="https://citation.scansci.com">Citation Lab</a>
       </div>
     </details>
   </nav>
